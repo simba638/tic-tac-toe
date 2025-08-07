@@ -3,144 +3,216 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tic Tac Toe - AI Mode</title>
+  <title>Tic Tac Toe by Faiz</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #fdf6f8;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fdf6f9;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      min-height: 100vh;
+      color: #333;
     }
+
     h1 {
+      font-size: 2.5rem;
       color: #b76e79;
-      margin-bottom: 20px;
     }
+
     .board {
       display: grid;
       grid-template-columns: repeat(3, 100px);
-      grid-gap: 5px;
+      grid-gap: 10px;
+      margin: 20px 0;
     }
+
     .cell {
       width: 100px;
       height: 100px;
-      background-color: #fff;
-      border: 2px solid #b76e79;
-      font-size: 2rem;
-      text-align: center;
-      line-height: 100px;
+      background: #fff;
+      border: 2px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      border-radius: 10px;
+      transition: background 0.3s;
     }
+
     .cell:hover {
-      background-color: #fbeaec;
+      background: #fdecef;
     }
-    #status {
-      margin-top: 20px;
+
+    .status {
       font-size: 1.2rem;
-      color: #333;
+      margin-bottom: 15px;
+      color: #b76e79;
     }
-    #restart {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background-color: #b76e79;
+
+    button, select {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #b76e79;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin: 5px;
     }
+
+    button:hover {
+      background: #a45d6b;
+    }
+
+    select {
+      background: white;
+      color: #b76e79;
+      border: 2px solid #b76e79;
+    }
+
     footer {
-      margin-top: 30px;
+      margin-top: 40px;
       font-size: 0.9rem;
-      color: #aaa;
+      color: #777;
     }
   </style>
 </head>
 <body>
 
-  <h1>Tic Tac Toe (vs AI)</h1>
-  <div class="board" id="board"></div>
-  <div id="status"></div>
-  <button id="restart">Restart</button>
+  <h1>Tic Tac Toe</h1>
+  <div class="status" id="status">Your turn (X)</div>
+
+  <div>
+    <select id="modeSelect" onchange="changeMode()">
+      <option value="ai">Play vs AI</option>
+      <option value="2p">2 Player Mode</option>
+    </select>
+    <button onclick="resetGame()">Play Again</button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
   <footer>Created by Faiz · All rights reserved</footer>
 
+  <audio id="winSound" src="win.mp3"></audio>
+  <audio id="loseSound" src="lose.mp3"></audio>
+
   <script>
-    const board = document.getElementById("board");
-    const status = document.getElementById("status");
-    const restartBtn = document.getElementById("restart");
+    const cells = document.querySelectorAll('.cell');
+    const statusText = document.getElementById('status');
+    const modeSelect = document.getElementById('modeSelect');
+    const winSound = document.getElementById('winSound');
+    const loseSound = document.getElementById('loseSound');
 
-    let cells = Array(9).fill(null);
-    let isPlayerTurn = true;
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
     let gameOver = false;
+    let mode = 'ai'; // 'ai' or '2p'
 
-    function renderBoard() {
-      board.innerHTML = "";
-      cells.forEach((cell, i) => {
-        const div = document.createElement("div");
-        div.classList.add("cell");
-        div.textContent = cell;
-        div.addEventListener("click", () => handleMove(i));
-        board.appendChild(div);
-      });
-    }
+    const winPatterns = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
 
-    function handleMove(index) {
-      if (cells[index] || gameOver || !isPlayerTurn) return;
+    function handleClick(e) {
+      const index = e.target.dataset.index;
+      if (board[index] !== '' || gameOver) return;
 
-      cells[index] = "X";
-      isPlayerTurn = false;
-      renderBoard();
-      checkWinner();
+      board[index] = currentPlayer;
+      e.target.textContent = currentPlayer;
 
-      if (!gameOver) {
-        setTimeout(aiMove, 500); // Let AI move after short delay
+      if (checkWin(currentPlayer)) {
+        statusText.textContent = `${currentPlayer} wins!`;
+        gameOver = true;
+        currentPlayer === 'X' ? winSound.play() : loseSound.play();
+        return;
+      }
+
+      if (board.every(cell => cell !== '')) {
+        statusText.textContent = "It's a draw!";
+        gameOver = true;
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateStatus();
+
+      if (mode === 'ai' && currentPlayer === 'O') {
+        setTimeout(aiMove, 400);
       }
     }
 
     function aiMove() {
-      let available = cells.map((val, idx) => val === null ? idx : null).filter(v => v !== null);
-      if (available.length === 0) return;
+      if (gameOver) return;
 
-      // Simple AI: choose random move
-      let move = available[Math.floor(Math.random() * available.length)];
-      cells[move] = "O";
-      isPlayerTurn = true;
-      renderBoard();
-      checkWinner();
-    }
+      let emptyIndexes = board
+        .map((val, idx) => val === '' ? idx : null)
+        .filter(val => val !== null);
 
-    function checkWinner() {
-      const winPatterns = [
-        [0,1,2], [3,4,5], [6,7,8], // Rows
-        [0,3,6], [1,4,7], [2,5,8], // Columns
-        [0,4,8], [2,4,6]           // Diagonals
-      ];
-      for (let pattern of winPatterns) {
-        const [a, b, c] = pattern;
-        if (cells[a] && cells[a] === cells[b] && cells[b] === cells[c]) {
-          status.textContent = `${cells[a]} wins!`;
-          gameOver = true;
-          return;
-        }
-      }
-      if (!cells.includes(null)) {
-        status.textContent = "It's a draw!";
+      let randomIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+      board[randomIndex] = 'O';
+      cells[randomIndex].textContent = 'O';
+
+      if (checkWin('O')) {
+        statusText.textContent = `AI wins!`;
         gameOver = true;
+        loseSound.play();
+        return;
+      }
+
+      if (board.every(cell => cell !== '')) {
+        statusText.textContent = "It's a draw!";
+        gameOver = true;
+        return;
+      }
+
+      currentPlayer = 'X';
+      updateStatus();
+    }
+
+    function updateStatus() {
+      if (mode === 'ai') {
+        statusText.textContent = currentPlayer === 'X' ? "Your turn (X)" : "AI's turn (O)";
+      } else {
+        statusText.textContent = `${currentPlayer}'s turn`;
       }
     }
 
-    restartBtn.onclick = () => {
-      cells = Array(9).fill(null);
-      gameOver = false;
-      isPlayerTurn = true;
-      status.textContent = "";
-      renderBoard();
-    };
+    function checkWin(player) {
+      return winPatterns.some(pattern =>
+        pattern.every(index => board[index] === player)
+      );
+    }
 
-    renderBoard();
+    function resetGame() {
+      board = ['', '', '', '', '', '', '', '', ''];
+      cells.forEach(cell => cell.textContent = '');
+      currentPlayer = 'X';
+      gameOver = false;
+      updateStatus();
+    }
+
+    function changeMode() {
+      mode = modeSelect.value;
+      resetGame();
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleClick));
   </script>
 </body>
 </html>
