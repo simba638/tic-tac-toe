@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe - Faiz</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #fbeffb, #fff);
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+      color: #d281c3;
+      animation: fadeInDown 1s ease-out;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      margin-bottom: 20px;
+      animation: fadeInUp 1s ease-in;
+    }
+
+    .cell {
+      background: #fff0f6;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      font-size: 2.5rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .cell:hover {
+      background: #ffe3f1;
+      transform: scale(1.05);
+    }
+
+    .cell.X {
+      color: #f06292;
+      animation: pop 0.3s ease-in-out;
+    }
+
+    .cell.O {
+      color: #9575cd;
+      animation: pop 0.3s ease-in-out;
+    }
+
+    #status {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: #444;
+      animation: fadeIn 0.8s ease-in;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      background: #d281c3;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background: #b56da8;
+    }
+
+    footer {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #888;
+      text-align: center;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.7); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="status">Player X's Turn</div>
+  <div class="board" id="board"></div>
+  <button onclick="resetGame()">Restart Game</button>
+  <footer>Created by Faiz · All rights reserved</footer>
+
+  <!-- Sound Effects -->
+  <audio id="win-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9ba246e7ba.mp3"></audio>
+  <audio id="draw-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_a1fdc55f3f.mp3"></audio>
+  <audio id="click-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_e89021f6e0.mp3"></audio>
+
+  <script>
+    const board = document.getElementById("board");
+    const statusText = document.getElementById("status");
+    const winSound = document.getElementById("win-sound");
+    const drawSound = document.getElementById("draw-sound");
+    const clickSound = document.getElementById("click-sound");
+
+    let cells = [];
+    let currentPlayer = "X";
+    let gameOver = false;
+    let moveCount = 0;
+
+    function createBoard() {
+      board.innerHTML = "";
+      cells = [];
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+        cell.addEventListener("click", () => handleClick(cell));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleClick(cell) {
+      if (cell.textContent || gameOver) return;
+      cell.textContent = currentPlayer;
+      cell.classList.add(currentPlayer);
+      clickSound.play();
+      moveCount++;
+
+      if (checkWin()) {
+        statusText.textContent = `Player ${currentPlayer} Wins!`;
+        gameOver = true;
+        winSound.play();
+      } else if (moveCount === 9) {
+        statusText.textContent = "It's a Draw!";
+        drawSound.play();
+      } else {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        statusText.textContent = `Player ${currentPlayer}'s Turn`;
+      }
+    }
+
+    function checkWin() {
+      const combos = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      return combos.some(combo => {
+        const [a,b,c] = combo;
+        return cells[a].textContent &&
+               cells[a].textContent === cells[b].textContent &&
+               cells[a].textContent === cells[c].textContent;
+      });
+    }
+
+    function resetGame() {
+      currentPlayer = "X";
+      gameOver = false;
+      moveCount = 0;
+      statusText.textContent = "Player X's Turn";
+      createBoard();
+    }
+
+    createBoard();
+  </script>
+</body>
+</html>
